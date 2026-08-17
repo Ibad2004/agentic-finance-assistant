@@ -10,6 +10,9 @@ class Settings(BaseSettings):
     """Runtime settings required by the application infrastructure."""
 
     database_url: str
+    jwt_secret_key: SecretStr
+    jwt_algorithm: str = "HS256"
+    jwt_access_token_expire_minutes: int = Field(default=1440, ge=1)
     groq_api_key: SecretStr | None = None
     groq_model: str = "openai/gpt-oss-120b"
     transaction_agent_batch_size: int = Field(default=10, ge=1, le=100)
