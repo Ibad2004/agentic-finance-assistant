@@ -2,6 +2,7 @@
 
 from functools import lru_cache
 
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -9,6 +10,11 @@ class Settings(BaseSettings):
     """Runtime settings required by the application infrastructure."""
 
     database_url: str
+    groq_api_key: SecretStr | None = None
+    groq_model: str = "openai/gpt-oss-120b"
+    transaction_agent_batch_size: int = Field(default=10, ge=1, le=100)
+    transaction_agent_confidence_threshold: float = Field(default=0.85, ge=0, le=1)
+    transaction_agent_max_batches_per_run: int = Field(default=10, ge=1, le=100)
 
     model_config = SettingsConfigDict(
         env_file=".env",
