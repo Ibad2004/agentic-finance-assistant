@@ -69,23 +69,44 @@ class TransactionRepository:
         account.balance_updated_at = updated_at
 
     def list_transactions_for_account(
-        self, account_id: UUID, user_id: UUID, limit: int = 100, offset: int = 0
+        self,
+        account_id: UUID,
+        user_id: UUID,
+        limit: int = 100,
+        offset: int = 0,
+        start_date: date | None = None,
+        end_date: date | None = None,
+        category_id: UUID | None = None,
+        transaction_type: str | None = None,
+        min_amount: Decimal | None = None,
+        max_amount: Decimal | None = None,
     ) -> tuple[list[Transaction], int]:
+        base_filter = [
+            Transaction.account_id == account_id,
+            Transaction.user_id == user_id,
+        ]
+        if start_date is not None:
+            base_filter.append(Transaction.transaction_date >= start_date)
+        if end_date is not None:
+            base_filter.append(Transaction.transaction_date <= end_date)
+        if category_id is not None:
+            base_filter.append(Transaction.category_id == category_id)
+        if transaction_type is not None:
+            base_filter.append(Transaction.transaction_type == transaction_type)
+        if min_amount is not None:
+            base_filter.append(Transaction.amount >= min_amount)
+        if max_amount is not None:
+            base_filter.append(Transaction.amount <= max_amount)
+
         total = self._session.scalar(
-            select(func.count(Transaction.id)).where(
-                Transaction.account_id == account_id,
-                Transaction.user_id == user_id,
-            )
+            select(func.count(Transaction.id)).where(*base_filter)
         ) or 0
 
         transactions = list(
             self._session.scalars(
                 select(Transaction)
                 .options(joinedload(Transaction.category))
-                .where(
-                    Transaction.account_id == account_id,
-                    Transaction.user_id == user_id,
-                )
+                .where(*base_filter)
                 .order_by(Transaction.transaction_date.desc(), Transaction.created_at.desc())
                 .limit(limit)
                 .offset(offset)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -31,8 +32,6 @@ class TaxAgent:
         Returns:
             The persisted TaxCalculation model.
         """
-        from decimal import Decimal
-
         # Ensure Decimal type for compatibility with the tool
         total_income_dec = Decimal(str(total_income))
         custom_allowance_dec = (

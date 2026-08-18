@@ -3,12 +3,13 @@
 **/__pycache__/
 *.pyc
 .pytest_cache/
-reports/
-test_tax.db
-
-# IDE and editor files
+.git/
+.gitignore
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+reports/
+test_tax.db
+docs/

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import date
+from decimal import Decimal
 from typing import Annotated
 from uuid import UUID
 
@@ -135,8 +137,18 @@ def list_transactions(
     db: Annotated[Session, Depends(get_db)],
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
     offset: Annotated[int, Query(ge=0)] = 0,
+    start_date: Annotated[date | None, Query(description="Filter: transactions on or after this date")] = None,
+    end_date: Annotated[date | None, Query(description="Filter: transactions on or before this date")] = None,
+    category: Annotated[UUID | None, Query(description="Filter: category UUID")] = None,
+    transaction_type: Annotated[str | None, Query(description="Filter: 'income' or 'expense'")] = None,
+    min_amount: Annotated[Decimal | None, Query(description="Filter: minimum amount (inclusive)")] = None,
+    max_amount: Annotated[Decimal | None, Query(description="Filter: maximum amount (inclusive)")] = None,
 ) -> TransactionListResponse:
-    """List transactions for a financial account, verifying user ownership and returning safe fields."""
+    """List transactions for a financial account with optional filters.
+
+    Filters are applied at the database level for efficiency.
+    All filters are optional and can be combined.
+    """
     account_repo = AccountRepository(db)
     account = account_repo.get_account_for_user(account_id=account_id, user_id=current_user.id)
     if account is None:
@@ -151,6 +163,12 @@ def list_transactions(
         user_id=current_user.id,
         limit=limit,
         offset=offset,
+        start_date=start_date,
+        end_date=end_date,
+        category_id=category,
+        transaction_type=transaction_type,
+        min_amount=min_amount,
+        max_amount=max_amount,
     )
 
     items = [
