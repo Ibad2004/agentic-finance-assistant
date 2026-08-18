@@ -9,6 +9,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.api.routes.accounts import router as accounts_router
 from app.api.routes.auth import router as auth_router
+from app.api.routes.tax import router as tax_router
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +22,7 @@ app = FastAPI(
 # Mount API routers
 app.include_router(auth_router)
 app.include_router(accounts_router)
+app.include_router(tax_router)
 
 
 @app.exception_handler(SQLAlchemyError)
