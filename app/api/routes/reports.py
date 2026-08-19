@@ -2,17 +2,22 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_current_user, get_db
+from app.config import Settings, get_settings
 from app.db.models import User
 from app.db.repositories.financial_report_repository import FinancialReportRepository
 from app.schemas.report import ReportGenerateRequest, ReportDetailResponse, ReportResponse
 from app.services.report_service import ReportService
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/reports", tags=["Reports"])
 
@@ -91,3 +96,60 @@ def get_report(
             detail="Report not found or access denied.",
         )
     return result
+
+
+# --- AI REPORT INSIGHTS ENDPOINTS ---
+
+class ReportInsightsRequest(BaseModel):
+    question: str = Field(min_length=1, max_length=2000)
+
+
+class ReportInsightsResponse(BaseModel):
+    response: str
+
+
+@router.post(
+    "/insights",
+    response_model=ReportInsightsResponse,
+    status_code=status.HTTP_200_OK,
+    summary="AI insights for a financial period",
+)
+def get_report_insights(
+    payload: ReportGenerateRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> ReportInsightsResponse:
+    """Get AI-powered financial insights for a given period.
+
+    The Report Agent:
+    1. Deterministically gathers all financial data for the period
+    2. Passes verified data to the LLM
+    3. Returns AI-generated insights
+
+    All financial numbers are from backend calculations.
+    """
+    try:
+        from app.agents.report_agent import ReportAgent
+        from app.services.groq_chat_llm import GroqChatLlm
+
+        llm = GroqChatLlm(settings)
+        agent = ReportAgent(session=db, llm=llm)
+        result = agent.generate_insights(
+            user_id=current_user.id,
+            period_start=payload.period_start,
+            period_end=payload.period_end,
+        )
+        return ReportInsightsResponse(response=result.get("ai_insights", "No insights available."))
+    except RuntimeError as exc:
+        logger.error("LLM provider not configured: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="The AI assistant is not configured. Please contact the administrator.",
+        ) from exc
+    except Exception as exc:
+        logger.error("Report insights failed: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Report insights are temporarily unavailable. Please try again later.",
+        ) from exc

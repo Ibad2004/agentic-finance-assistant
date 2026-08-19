@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_current_user, get_db
+from app.config import Settings, get_settings
 from app.db.models import User
 from app.db.repositories.budget_repository import BudgetRepository
 from app.schemas.budget import (
@@ -18,6 +21,8 @@ from app.schemas.budget import (
     BudgetUpdateRequest,
 )
 from app.services.budget_service import BudgetService
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/budgets", tags=["Budgets"])
 
@@ -140,3 +145,97 @@ def delete_budget(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Budget not found or access denied.",
         )
+
+
+# --- AI BUDGET ANALYSIS ENDPOINTS ---
+
+class BudgetAnalysisRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=2000)
+
+
+class BudgetAnalysisResponse(BaseModel):
+    response: str
+
+
+@router.post(
+    "/analyze",
+    response_model=BudgetAnalysisResponse,
+    status_code=status.HTTP_200_OK,
+    summary="AI analysis of the user's budget health",
+)
+def analyze_budgets(
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> BudgetAnalysisResponse:
+    """Get AI-powered analysis of all budgets for the authenticated user.
+
+    The Budget Agent:
+    1. Deterministically retrieves all budget data with spending analysis
+    2. Passes verified financial context to the LLM
+    3. Returns AI-generated budget insights
+
+    All financial numbers are from backend calculations.
+    """
+    try:
+        from app.agents.budget_agent import BudgetAgent
+        from app.services.groq_chat_llm import GroqChatLlm
+
+        llm = GroqChatLlm(settings)
+        agent = BudgetAgent(session=db, llm=llm)
+        result = agent.analyze_all_budgets(user_id=current_user.id)
+        return BudgetAnalysisResponse(response=result.get("ai_summary", "No budget data available."))
+    except RuntimeError as exc:
+        logger.error("LLM provider not configured: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="The AI assistant is not configured. Please contact the administrator.",
+        ) from exc
+    except Exception as exc:
+        logger.error("Budget AI analysis failed: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Budget analysis is temporarily unavailable. Please try again later.",
+        ) from exc
+
+
+@router.post(
+    "/chat",
+    response_model=BudgetAnalysisResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Ask a natural language question about your budgets",
+)
+def budget_chat(
+    payload: BudgetAnalysisRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> BudgetAnalysisResponse:
+    """Ask the Budget Agent a natural language question about your budgets.
+
+    The agent deterministically gathers all budget data, then the AI answers
+    using only verified financial context.
+    """
+    try:
+        from app.agents.budget_agent import BudgetAgent
+        from app.services.groq_chat_llm import GroqChatLlm
+
+        llm = GroqChatLlm(settings)
+        agent = BudgetAgent(session=db, llm=llm)
+        response = agent.answer_budget_question(
+            user_id=current_user.id,
+            question=payload.message,
+        )
+        return BudgetAnalysisResponse(response=response)
+    except RuntimeError as exc:
+        logger.error("LLM provider not configured: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="The AI assistant is not configured. Please contact the administrator.",
+        ) from exc
+    except Exception as exc:
+        logger.error("Budget chat failed: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Budget analysis is temporarily unavailable. Please try again later.",
+        ) from exc

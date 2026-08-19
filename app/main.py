@@ -10,6 +10,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.api.routes.accounts import router as accounts_router
 from app.api.routes.auth import router as auth_router
 from app.api.routes.budgets import router as budgets_router
+from app.api.routes.categories import router as categories_router
+from app.api.routes.assistant import router as assistant_router
 from app.api.routes.reports import router as reports_router
 from app.api.routes.tax import router as tax_router
 
@@ -56,6 +58,10 @@ app = FastAPI(
             "description": "Generate and retrieve PDF financial summary reports with income, expense, and category breakdowns.",
         },
         {
+            "name": "AI Assistant",
+            "description": "AI-powered financial assistant chat. Provides context-aware financial guidance based on user data using Groq LLM.",
+        },
+        {
             "name": "Health",
             "description": "Application health check endpoint.",
         },
@@ -66,8 +72,10 @@ app = FastAPI(
 app.include_router(auth_router)
 app.include_router(accounts_router)
 app.include_router(budgets_router)
+app.include_router(categories_router)
 app.include_router(reports_router)
 app.include_router(tax_router)
+app.include_router(assistant_router)
 
 
 @app.exception_handler(SQLAlchemyError)

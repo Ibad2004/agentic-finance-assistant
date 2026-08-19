@@ -1,0 +1,164 @@
+@import "tailwindcss";
+
+@theme {
+  --color-navy-900: #060B18;
+  --color-navy-800: #0B1224;
+  --color-navy-700: #101A31;
+  --color-navy-600: #162040;
+  --color-navy-500: #1C2A50;
+  --color-primary: #4F7CFF;
+  --color-primary-hover: #3B65E0;
+  --color-accent-purple: #8B5CF6;
+  --color-accent-cyan: #22D3EE;
+  --color-success: #22C55E;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+}
+
+/* ── Theme tokens ── */
+.dark {
+  --bg-app: #060B18;
+  --bg-surface: #101A31;
+  --bg-surface-hover: #162040;
+  --bg-surface-secondary: #0B1224;
+  --bg-input: #0B1224;
+  --bg-sidebar: #0B1224;
+  --bg-topbar: #0B1224;
+  --bg-modal: #101A31;
+  --bg-overlay: rgba(0, 0, 0, 0.6);
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-tertiary: #64748B;
+  --border-default: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.12);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --chart-grid: #1E2A45;
+  --nav-active-bg: rgba(79, 124, 255, 0.12);
+  --nav-active-text: #4F7CFF;
+  --nav-hover-bg: rgba(255, 255, 255, 0.05);
+  --skeleton-from: #101A31;
+  --skeleton-to: #162040;
+  --toast-bg: #101A31;
+  --badge-green-bg: rgba(34, 197, 94, 0.12);
+  --badge-green-text: #4ADE80;
+  --badge-red-bg: rgba(239, 68, 68, 0.12);
+  --badge-red-text: #F87171;
+  --badge-amber-bg: rgba(245, 158, 11, 0.12);
+  --badge-amber-text: #FBBF24;
+  --badge-blue-bg: rgba(79, 124, 255, 0.12);
+  --badge-blue-text: #818CF8;
+  --badge-purple-bg: rgba(139, 92, 246, 0.12);
+  --badge-purple-text: #A78BFA;
+}
+
+.light {
+  --bg-app: #F6F8FC;
+  --bg-surface: #FFFFFF;
+  --bg-surface-hover: #F1F5F9;
+  --bg-surface-secondary: #F8FAFC;
+  --bg-input: #F1F5F9;
+  --bg-sidebar: #FFFFFF;
+  --bg-topbar: #FFFFFF;
+  --bg-modal: #FFFFFF;
+  --bg-overlay: rgba(0, 0, 0, 0.4);
+  --text-primary: #0F172A;
+  --text-secondary: #64748B;
+  --text-tertiary: #94A3B8;
+  --border-default: #E2E8F0;
+  --border-strong: #CBD5E1;
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --chart-grid: #E2E8F0;
+  --nav-active-bg: rgba(65, 105, 225, 0.10);
+  --nav-active-text: #4169E1;
+  --nav-hover-bg: rgba(0, 0, 0, 0.04);
+  --skeleton-from: #E2E8F0;
+  --skeleton-to: #F1F5F9;
+  --toast-bg: #FFFFFF;
+  --badge-green-bg: rgba(22, 163, 74, 0.10);
+  --badge-green-text: #16A34A;
+  --badge-red-bg: rgba(220, 38, 38, 0.10);
+  --badge-red-text: #DC2626;
+  --badge-amber-bg: rgba(217, 119, 6, 0.10);
+  --badge-amber-text: #D97706;
+  --badge-blue-bg: rgba(65, 105, 225, 0.10);
+  --badge-blue-text: #4169E1;
+  --badge-purple-bg: rgba(124, 58, 237, 0.10);
+  --badge-purple-text: #7C3AED;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  min-height: 100vh;
+}
+
+body {
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--text-tertiary);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0px 1000px var(--bg-input) inset;
+  -webkit-text-fill-color: var(--text-primary);
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* ── Skeleton animation ── */
+@keyframes skeleton-pulse {
+  0%, 100% { background-color: var(--skeleton-from); }
+  50% { background-color: var(--skeleton-to); }
+}
+
+.skeleton {
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* ── Toast animation ── */
+@keyframes toast-in {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes toast-out {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(100%); opacity: 0; }
+}
+
+.toast-enter {
+  animation: toast-in 0.3s ease-out forwards;
+}
+
+.toast-exit {
+  animation: toast-out 0.3s ease-in forwards;
+}
